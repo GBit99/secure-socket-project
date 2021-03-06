@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
 using System.Security.Authentication;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using Models;
@@ -13,6 +15,9 @@ namespace Client
     {
         static void Main(string[] args)
         {
+            Console.BackgroundColor = ConsoleColor.White;
+            Console.ForegroundColor = ConsoleColor.Black;
+
             // SSL server address
             string address = "127.0.0.1";
             if (args.Length > 0)
@@ -67,16 +72,20 @@ namespace Client
                 // Map client data to a model
                 var separatedData = line.Split(';');
                 var data = new DataModel(
-                    separatedData[0],
-                    separatedData[1],
-                    separatedData[2],
-                    separatedData[3],
-                    separatedData[4],
-                    separatedData[5],
-                    separatedData[6],
-                    separatedData[7],
-                    int.Parse(separatedData[8]),
-                    int.Parse(separatedData[9]));
+                    firstName: separatedData[0],
+                    lastName: separatedData[1],
+                    city: separatedData[2],
+                    postCode: separatedData[3],
+                    appVersion: separatedData[4],
+                    email: separatedData[5],
+                    music: separatedData[6],
+                    performer: separatedData[7],
+                    year: int.Parse(separatedData[8]),
+                    hour: int.Parse(separatedData[9]),
+                    md5Hash: separatedData[10],
+                    fileName: separatedData[11],
+                    fileType: separatedData[12],
+                    date: DateTime.Parse(separatedData[13]));
 
                 // JSON serialize the client data
                 string serializedData = JsonSerializer.Serialize(data);
@@ -106,9 +115,7 @@ namespace Client
             const string numbers = "0123456789";
             var random = new Random();
 
-            Thread.Sleep(100);
-
-            return random.Next(0,51) == 42 && dataType == DataType.Text
+            return random.Next(0,101) == 42 && dataType == DataType.Text
                 ? "virus"
                 : new string(
                     Enumerable
@@ -130,8 +137,26 @@ namespace Client
             var performer = GenerateRandomString(random.Next(1, 21), DataType.Text);
             var year = GenerateRandomString(4, DataType.Number);
             var hour = GenerateRandomString(2, DataType.Number);
+            var md5 = GenerateRandomMD5Hash();
+            var fileName = GenerateRandomString(random.Next(5, 20), DataType.Text);
+            var fileType = GenerateRandomString(random.Next(2, 5), DataType.Text);
+            var date = new DateTime(random.Next(1900, 2022), random.Next(1, 13), random.Next(1, 29));
 
-            return string.Join(';', firstName, lastName, city, postCode, appVersion, email, music, performer, year, hour);
+
+            return string.Join(';', firstName, lastName, city, postCode, appVersion, email, music, performer, year, hour, md5, fileName, fileType, date.ToString());
+        }
+
+        public static string GenerateRandomMD5Hash()
+        {
+            var random = new Random();
+
+            var md5Hasher = MD5.Create();
+            var randomString = GenerateRandomString(random.Next(20, 100), DataType.Text);
+            var randomStringBytes = Encoding.ASCII.GetBytes(randomString);
+
+            var hashedBytes = md5Hasher.ComputeHash(randomStringBytes);
+
+            return string.Join(string.Empty, hashedBytes.Select(b => b.ToString("x2")));
         }
     }
 }

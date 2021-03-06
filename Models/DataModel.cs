@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Models
 {
@@ -7,7 +8,21 @@ namespace Models
         public DataModel()
         { }
 
-        public DataModel(string firstName, string lastName, string city, string postCode, string appVersion, string email, string music, string performer, int year, int hour)
+        public DataModel(
+            string firstName,
+            string lastName,
+            string city,
+            string postCode,
+            string appVersion,
+            string email,
+            string music,
+            string performer,
+            int year,
+            int hour,
+            string md5Hash,
+            string fileName,
+            string fileType,
+            DateTime date)
         {
             FirstName = firstName;
             LastName = lastName;
@@ -19,6 +34,10 @@ namespace Models
             Performer = performer;
             Year = year;
             Hour = hour;
+            MD5Hash = md5Hash;
+            FileName = fileName;
+            FileType = fileType;
+            Date = date;
         }
 
         public string FirstName { get; set; }
@@ -41,6 +60,14 @@ namespace Models
 
         public int Hour { get; set; }
 
+        public string MD5Hash { get; set; }
+
+        public string FileName { get; set; }
+
+        public string FileType { get; set; }
+
+        public DateTime Date { get; set; }
+
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
@@ -55,6 +82,10 @@ namespace Models
             builder.AppendLine($"Performer: {this.Performer}");
             builder.AppendLine($"Year: {this.Year}");
             builder.AppendLine($"Hour: {this.Hour}");
+            builder.AppendLine($"MD5Hash: {this.MD5Hash}");
+            builder.AppendLine($"FileName: {this.FileName}");
+            builder.AppendLine($"FileType: {this.FileType}");
+            builder.AppendLine($"Date: {this.Date}");
 
             return builder.ToString();
         }
