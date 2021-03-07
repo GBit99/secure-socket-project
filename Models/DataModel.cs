@@ -24,6 +24,7 @@ namespace Models
             string fileType,
             DateTime date)
         {
+            Id = Guid.NewGuid();
             FirstName = firstName;
             LastName = lastName;
             City = city;
@@ -39,6 +40,8 @@ namespace Models
             FileType = fileType;
             Date = date;
         }
+
+        public Guid Id { get; set; }
 
         public string FirstName { get; set; }
 
@@ -72,6 +75,7 @@ namespace Models
         {
             StringBuilder builder = new StringBuilder();
 
+            builder.AppendLine($"Id: {this.Id}");
             builder.AppendLine($"FirstName: {this.FirstName}");
             builder.AppendLine($"LastName: {this.LastName}");
             builder.AppendLine($"City: {this.City}");

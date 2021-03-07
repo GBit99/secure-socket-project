@@ -39,7 +39,7 @@ namespace Server
             Console.WriteLine("Press Enter to stop the server or '!' to restart the server...");
 
             // Perform text input
-            for (;;)
+            do
             {
                 string line = Console.ReadLine();
 
@@ -57,11 +57,11 @@ namespace Server
                     continue;
                 }
 
-                //??? this might not be needed
                 // Multicast admin message to all sessions
                 line = "(admin) " + line;
                 server.Multicast(line);
             }
+            while (true);
 
             // Stop the server
             Console.Write("Server stopping...");

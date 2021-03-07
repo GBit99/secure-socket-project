@@ -2,6 +2,7 @@
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Models;
 using NetCoreServer;
 
@@ -9,7 +10,7 @@ namespace Server
 {
     public class SocketSession : SslSession
     {
-        private DataModel savedData;
+        private const string GUID_REGEX = @"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}";
 
         public SocketSession(SslServer server) : base(server) { }
 
@@ -23,7 +24,7 @@ namespace Server
             Console.WriteLine($"SSL session with Id {Id} handshaked!");
 
             // Send initial message
-            string message = "Hello from SSL app! Please send the following parameters separated by a semicolon or a ! symbol to disconnect. Parameters: FirstName; LastName; City; PostCode; AppVersion; Email; Music; Performer; Year; Hour";
+            string message = "Hello from SSL app! Please send the following parameters separated by a semicolon or a ! symbol to disconnect. Parameters: FirstName; LastName; City; PostCode; AppVersion; Email; Music; Performer; Year; Hour; MD5 hash; FileName; FileType; Date";
 
             Send(message);
         }
@@ -35,40 +36,75 @@ namespace Server
 
         protected override void OnReceived(byte[] buffer, long offset, long size)
         {
-            string jsonData = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+            string rawData = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
 
-            // Base 64 encoded compressed data
-            //string compressedData = Convert.ToBase64String(buffer, (int)offset, (int)size);
-
-            // json encoded data
-            //string jsonData = GzipHelper.Decompress(compressedData);
-
-            if (jsonData == "!")
+            if (rawData == "!")
             {
                 Disconnect();
             }
             else
             {
-                if (jsonData.Contains("virus"))
+                //if (rawData.Contains("virus"))
+                //{
+                //    string message = "Data contains a virus!";
+
+                //    Console.ForegroundColor = ConsoleColor.Red;
+                //    Console.WriteLine(message);
+                //    Console.WriteLine();
+                //    Console.ForegroundColor = ConsoleColor.White;
+
+                //    Send(message);
+                //    return;
+                //}
+
+                try
                 {
-                    string message = "Data contains a virus!";
+                    var dataModel = JsonSerializer.Deserialize<DataModel>(rawData);
 
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(message);
-                    Console.WriteLine();
-                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine("Incoming: \n" + dataModel);
 
-                    Send(message);
-                    return;
+                    // Send a processing successful server result
+                    Send(dataModel.Id, StatusCode.Success);
                 }
+                catch (Exception)
+                {
+                    // Extract the GUID/s using regex
+                    var regexMatches = Regex.Matches(rawData, GUID_REGEX);
 
-                // Deserialize the incoming JSON object into the data model
-                var dataObject = JsonSerializer.Deserialize<DataModel>(jsonData);
-
-                savedData = dataObject;
-
-                Console.WriteLine("Incoming: \n" + dataObject);
+                    for (int i = 0; i < regexMatches.Count; i++)
+                    {   
+                        if (Guid.TryParse(regexMatches[i].Value, out Guid parsedGuid))
+                        {
+                            // Send a processing failure server result
+                            Send(parsedGuid, StatusCode.Failure);
+                        }
+                        else
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Error: Could not parse the GUID [{regexMatches[i].Value}]");
+                            Console.ForegroundColor = ConsoleColor.White;
+                        }
+                    }
+                }
             }
+        }
+
+        public long Send(Guid elementId, StatusCode status)
+        {
+            var responseModel = new ServerResult(elementId, status);
+
+            var serializedResponse = JsonSerializer.Serialize(responseModel);
+
+            return base.Send(serializedResponse);
+        }
+
+        public override long Send(string text)
+        {
+            var responseModel = new ServerResult(text);
+
+            var serializedResponse = JsonSerializer.Serialize(responseModel);
+
+            return base.Send(serializedResponse);
         }
 
         protected override void OnError(SocketError error)

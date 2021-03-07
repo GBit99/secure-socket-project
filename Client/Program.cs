@@ -4,8 +4,6 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
-using System.Threading;
 using Models;
 using NetCoreServer;
 
@@ -51,7 +49,7 @@ namespace Client
             Console.WriteLine("Press Enter to stop the client or '!' to reconnect the client...");
 
             // Perform text input
-            for (;;)
+            do
             {
                 string line = GenerateRandomData();
 
@@ -71,7 +69,8 @@ namespace Client
 
                 // Map client data to a model
                 var separatedData = line.Split(';');
-                var data = new DataModel(
+
+                var dataModel = new DataModel(
                     firstName: separatedData[0],
                     lastName: separatedData[1],
                     city: separatedData[2],
@@ -87,15 +86,10 @@ namespace Client
                     fileType: separatedData[12],
                     date: DateTime.Parse(separatedData[13]));
 
-                // JSON serialize the client data
-                string serializedData = JsonSerializer.Serialize(data);
-
-                //// Gzip the client data
-                //var compressedData = GzipHelper.Compress(serializedData);
-
                 // Send the client data
-                client.SendAsync(serializedData);
+                client.SendAsync(dataModel);
             }
+            while (true);
 
             // Disconnect the client
             Console.Write("Client disconnecting...");
@@ -115,12 +109,17 @@ namespace Client
             const string numbers = "0123456789";
             var random = new Random();
 
-            return random.Next(0,101) == 42 && dataType == DataType.Text
-                ? "virus"
-                : new string(
-                    Enumerable
-                        .Repeat(dataType == DataType.Text ? chars : numbers, length)
-                        .Select(s=>s[random.Next(s.Length)]).ToArray());
+            return new string(Enumerable
+                .Repeat(dataType == DataType.Text ? chars : numbers, length)
+                .Select(s => s[random.Next(s.Length)])
+                .ToArray());
+
+            //return random.Next(0, 101) == 42 && dataType == DataType.Text
+            //    ? "virus"
+            //    : new string(
+            //        Enumerable
+            //            .Repeat(dataType == DataType.Text ? chars : numbers, length)
+            //            .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         public static string GenerateRandomData()
